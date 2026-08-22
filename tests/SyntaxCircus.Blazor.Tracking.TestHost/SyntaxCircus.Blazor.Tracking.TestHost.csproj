@@ -8,4 +8,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\SyntaxCircus.Blazor.Tracking\SyntaxCircus.Blazor.Tracking.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\src\SyntaxCircus.Blazor.Tracking\wwwroot\tracking.js"
+                      LogicalName="SyntaxCircus.Blazor.Tracking.TestHost.tracking.js" />
+  </ItemGroup>
 </Project>

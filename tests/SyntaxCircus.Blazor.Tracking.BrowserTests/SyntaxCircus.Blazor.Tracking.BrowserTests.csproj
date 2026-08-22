@@ -11,6 +11,6 @@
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SyntaxCircus.Blazor.Tracking.TestHost\SyntaxCircus.Blazor.Tracking.TestHost.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\SyntaxCircus.Blazor.Tracking.TestHost\SyntaxCircus.Blazor.Tracking.TestHost.csproj" />
   </ItemGroup>
 </Project>

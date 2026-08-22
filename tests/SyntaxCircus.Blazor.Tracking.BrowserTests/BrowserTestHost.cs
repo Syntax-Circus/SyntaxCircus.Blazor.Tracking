@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using SyntaxCircus.Blazor.Tracking.TestHost;
 
 namespace SyntaxCircus.Blazor.Tracking.BrowserTests;
 
@@ -8,27 +9,31 @@ internal sealed class BrowserTestHost : IAsyncDisposable
 {
     private readonly Process process;
 
-    private BrowserTestHost(Process process, Uri address)
+    private BrowserTestHost(Process process, Uri address, Task<string> standardOutput, Task<string> standardError)
     {
         this.process = process;
         Address = address;
+        StandardOutput = standardOutput;
+        StandardError = standardError;
     }
 
     public Uri Address { get; }
 
+    private Task<string> StandardOutput { get; }
+
+    private Task<string> StandardError { get; }
+
     public static async Task<BrowserTestHost> StartAsync(string mode, string policyVersion = "1")
     {
         var port = GetAvailablePort();
-        var hostAssembly = Path.Combine(FindRepositoryRoot(), "tests", "SyntaxCircus.Blazor.Tracking.TestHost", "bin", "Release", "net10.0", "SyntaxCircus.Blazor.Tracking.TestHost.dll");
-        if (!File.Exists(hostAssembly))
-        {
-            throw new FileNotFoundException("The test host assembly was not copied to the browser-test output directory.", hostAssembly);
-        }
-
-        var startInfo = new ProcessStartInfo("dotnet", $"\"{hostAssembly}\" --urls http://127.0.0.1:{port}")
+        var address = new Uri($"http://127.0.0.1:{port}");
+        var hostAssembly = typeof(TestHostAssemblyMarker).Assembly.Location;
+        var startInfo = new ProcessStartInfo("dotnet", $"\"{hostAssembly}\" --urls {address}")
         {
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
         };
         startInfo.Environment["Tracking__GoogleAnalytics__Enabled"] = mode == "ga4" ? "true" : "false";
         startInfo.Environment["Tracking__GoogleAnalytics__MeasurementId"] = "G-ABCDE123";
@@ -40,7 +45,8 @@ internal sealed class BrowserTestHost : IAsyncDisposable
         startInfo.Environment["Tracking__Consent__PolicyVersion"] = policyVersion;
 
         var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Unable to start the browser test host.");
-        var address = new Uri($"http://127.0.0.1:{port}");
+        var standardOutput = process.StandardOutput.ReadToEndAsync();
+        var standardError = process.StandardError.ReadToEndAsync();
         using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
         var deadline = DateTimeOffset.UtcNow.AddSeconds(15);
 
@@ -48,7 +54,7 @@ internal sealed class BrowserTestHost : IAsyncDisposable
         {
             if (process.HasExited)
             {
-                throw new InvalidOperationException($"The browser test host exited with code {process.ExitCode}.");
+                throw new InvalidOperationException($"The browser test host exited with code {process.ExitCode}.{await GetHostOutputAsync(standardOutput, standardError)}");
             }
 
             try
@@ -56,7 +62,7 @@ internal sealed class BrowserTestHost : IAsyncDisposable
                 using var response = await client.GetAsync(address);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    return new BrowserTestHost(process, address);
+                    return new BrowserTestHost(process, address, standardOutput, standardError);
                 }
             }
             catch (HttpRequestException)
@@ -66,9 +72,14 @@ internal sealed class BrowserTestHost : IAsyncDisposable
             await Task.Delay(100);
         }
 
+        if (process.HasExited)
+        {
+            throw new InvalidOperationException($"The browser test host exited with code {process.ExitCode}.{await GetHostOutputAsync(standardOutput, standardError)}");
+        }
+
         process.Kill(entireProcessTree: true);
         await process.WaitForExitAsync();
-        throw new TimeoutException("The browser test host did not start within 15 seconds.");
+        throw new TimeoutException($"The browser test host did not start within 15 seconds.{await GetHostOutputAsync(standardOutput, standardError)}");
     }
 
     public ValueTask DisposeAsync()
@@ -83,6 +94,15 @@ internal sealed class BrowserTestHost : IAsyncDisposable
         return ValueTask.CompletedTask;
     }
 
+    private static async Task<string> GetHostOutputAsync(Task<string> standardOutput, Task<string> standardError)
+    {
+        var output = await standardOutput;
+        var error = await standardError;
+        return string.IsNullOrWhiteSpace(output) && string.IsNullOrWhiteSpace(error)
+            ? string.Empty
+            : $"{Environment.NewLine}Host output:{Environment.NewLine}{output}{error}";
+    }
+
     private static int GetAvailablePort()
     {
         var listener = new TcpListener(IPAddress.Loopback, 0);
@@ -90,18 +110,5 @@ internal sealed class BrowserTestHost : IAsyncDisposable
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
         listener.Stop();
         return port;
-    }
-
-    private static string FindRepositoryRoot()
-    {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "SyntaxCircus.Blazor.Tracking.slnx")))
-            {
-                return directory.FullName;
-            }
-        }
-
-        throw new DirectoryNotFoundException("Unable to locate the repository root from the browser-test output directory.");
     }
 }
