@@ -30,4 +30,23 @@ public sealed class TrackingHeadTests
         markup.ShouldContain("_content/SyntaxCircus.Blazor.Tracking/tracking.js");
         markup.ShouldNotContain("&quot;");
     }
+
+    [Fact]
+    public void RendersGoogleTagManagerConfiguration()
+    {
+        using var context = new BunitContext();
+        context.Services.AddSingleton<IOptions<TrackingOptions>>(Options.Create(new TrackingOptions
+        {
+            GoogleTagManager = new GoogleTagManagerOptions
+            {
+                Enabled = true,
+                ContainerId = "GTM-ABCDE123"
+            }
+        }));
+
+        var markup = context.Render<TrackingHead>().Markup;
+
+        markup.ShouldContain("googleTagManager");
+        markup.ShouldContain("GTM-ABCDE123");
+    }
 }

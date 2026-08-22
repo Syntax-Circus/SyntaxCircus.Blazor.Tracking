@@ -1,8 +1,23 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="AGENTS.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="GitVersion.yml" />
+    <File Path="LICENSE.txt" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Solution Items/.github/" />
+  <Folder Name="/Solution Items/.github/workflows/">
+    <File Path=".github/workflows/build.yml" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/SyntaxCircus.Blazor.Tracking/SyntaxCircus.Blazor.Tracking.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/SyntaxCircus.Blazor.Tracking.BrowserTests/SyntaxCircus.Blazor.Tracking.BrowserTests.csproj" />
+    <Project Path="tests/SyntaxCircus.Blazor.Tracking.TestHost/SyntaxCircus.Blazor.Tracking.TestHost.csproj" />
     <Project Path="tests/SyntaxCircus.Blazor.Tracking.Tests/SyntaxCircus.Blazor.Tracking.Tests.csproj" />
   </Folder>
 </Solution>

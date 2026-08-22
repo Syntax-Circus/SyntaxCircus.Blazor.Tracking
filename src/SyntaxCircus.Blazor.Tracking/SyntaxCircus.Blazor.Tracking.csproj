@@ -3,11 +3,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <PackageId>SyntaxCircus.Blazor.Tracking</PackageId>
     <Title>SyntaxCircus Blazor Tracking</Title>
-    <Description>Consent-aware, configurable Umami and Google Analytics bootstrapping for Blazor applications.</Description>
+    <Description>Consent-aware, configurable Umami, direct GA4, and Google Tag Manager bootstrapping for Blazor applications.</Description>
     <Authors>Syntax Circus LLC</Authors>
     <Company>Syntax Circus LLC</Company>
     <Copyright>Copyright © Syntax Circus LLC</Copyright>
-    <PackageTags>blazor;razor;privacy;consent;cookies;analytics;umami;google-analytics;ga4</PackageTags>
+    <PackageTags>blazor;razor;privacy;consent;cookies;analytics;umami;google-analytics;ga4;google-tag-manager;gtm</PackageTags>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

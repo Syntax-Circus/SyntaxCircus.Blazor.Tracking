@@ -4,16 +4,19 @@ Read `README.md` first. It is the consumer-facing contract for this `net10.0` Ra
 
 ## Purpose and boundary
 
-`SyntaxCircus.Blazor.Tracking` provides configuration-driven Umami/GA4 bootstrapping and accessible consent markup. It is not legal advice, a consent-management platform certification, a visual design system, a server-side analytics collector, or a replacement for a host's privacy notice and deployment security.
+`SyntaxCircus.Blazor.Tracking` provides configuration-driven Umami, direct-GA4, and GTM bootstrapping plus accessible consent markup. It is not legal advice, a consent-management platform certification, a visual design system, a server-side analytics collector, or a replacement for a host's privacy notice and deployment security.
 
 The package may contain the minimal JavaScript required to read/save choices and load configured providers. It must not include a measurement ID, Umami website ID, provider secret, brand copy, CSS framework, host layout, geo-IP policy, or provider enabled by default.
 
 ## Public contract
 
 - `AddSyntaxCircusTracking`, `TrackingOptions`, all nested options, and public component parameters are public API.
-- Provider configuration is opt-in. An enabled Umami provider requires `ScriptUrl` and `WebsiteId`; an enabled GA4 provider requires `MeasurementId`.
+- Provider configuration is opt-in. An enabled Umami provider requires `ScriptUrl` and `WebsiteId`; enabled direct GA4 requires a `G-` `MeasurementId`; enabled GTM requires a `GTM-` `ContainerId`; direct GA4 and GTM are mutually exclusive.
 - `TrackingHead` is rendered once in the host head. `ConsentBanner` and `ConsentSettings` are rendered in the host body.
-- GA4 must never make a network request or write a cookie before valid analytics consent. Do not change Basic Consent Mode to advanced/cookieless pings without an explicit product and legal decision.
+- GA4 must never make a network request or write a cookie before valid analytics consent. GTM must not load before analytics or marketing consent. Do not change Basic Consent Mode to advanced/cookieless pings without an explicit product and legal decision.
+- Initialize Google Consent Mode with all four supported states denied; apply a consent update whenever a valid stored or newly saved choice is used, including revocation. Policy-version changes must invalidate stale choices.
+- On revocation, best-effort delete known first-party Google analytics cookies (`_ga`, `_ga_*`, `_gid`, `_gat*`, `_dc_gtm_*`) and marketing cookies (`_gac_*`, `_gcl_*`) across the current host and parent domains. Do not claim to remove third-party/custom GTM cookies or unload an already executing provider script.
+- GTM integrations must publish the fixed, vendor-prefixed `syntax_circus_consent_update` data-layer event with a `syntaxCircusConsent` payload after the container starts and on later preference changes. The prefix is intentional collision avoidance and is public contract; do not rename it or make it configurable without an explicit API decision.
 - Umami must remain independent of the consent choice and must not use cookies, local storage, fingerprinting, or a distinct-ID feature in the supplied integration.
 - `ConsentBanner` is CSS-framework-agnostic. `CssClass`, stable `data-privacy-*` hooks, and `RenderFragment` slots are consumer contract. `ChildContent` replaces all generated markup; documented action/category hooks must continue to work.
 - Consent stores only the policy version and category choices in the essential preference cookie. Changing `PolicyVersion` invalidates old choices.
@@ -36,6 +39,7 @@ Run from the repository root:
 ```bash
 dotnet restore SyntaxCircus.Blazor.Tracking.slnx
 dotnet build SyntaxCircus.Blazor.Tracking.slnx --configuration Release
+pwsh tests/SyntaxCircus.Blazor.Tracking.BrowserTests/bin/Release/net10.0/playwright.ps1 install chromium
 dotnet test SyntaxCircus.Blazor.Tracking.slnx --no-build --configuration Release
 dotnet pack SyntaxCircus.Blazor.Tracking.slnx --no-build --configuration Release
 ```

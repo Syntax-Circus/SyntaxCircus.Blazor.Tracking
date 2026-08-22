@@ -4,6 +4,7 @@ signing.local.props
 *.p12
 *.p8
 .cr/
+.NCrunch_*/
 .vs/
 *.rsuser
 *.suo

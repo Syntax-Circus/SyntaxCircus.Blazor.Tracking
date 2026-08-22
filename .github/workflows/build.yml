@@ -18,6 +18,7 @@ jobs:
           dotnet-version: 10.0.x
       - run: dotnet restore SyntaxCircus.Blazor.Tracking.slnx
       - run: dotnet build SyntaxCircus.Blazor.Tracking.slnx --no-restore --configuration Release
+      - run: pwsh tests/SyntaxCircus.Blazor.Tracking.BrowserTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
       - run: dotnet test SyntaxCircus.Blazor.Tracking.slnx --no-build --configuration Release
       - name: Pack
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
