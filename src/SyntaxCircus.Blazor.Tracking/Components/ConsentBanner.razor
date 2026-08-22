@@ -1,0 +1,67 @@
+@inject IOptions<TrackingOptions> TrackingOptionsAccessor
+
+@if (ChildContent is not null)
+{
+    @ChildContent
+}
+else
+{
+    <section class="@CssClass" data-privacy-banner hidden aria-labelledby="privacy-consent-title" aria-describedby="privacy-consent-description" role="dialog" aria-modal="true">
+        @if (HeaderContent is not null)
+        {
+            @HeaderContent
+        }
+        else
+        {
+            <h2 id="privacy-consent-title">Your privacy choices</h2>
+        }
+
+        @if (BodyContent is not null)
+        {
+            @BodyContent
+        }
+        else
+        {
+            <p id="privacy-consent-description">We use optional analytics to understand how this site is used. You can accept or reject these optional technologies.</p>
+            @if (!string.IsNullOrWhiteSpace(TrackingOptionsAccessor.Value.Consent.PrivacyPolicyUrl))
+            {
+                <p><a href="@TrackingOptionsAccessor.Value.Consent.PrivacyPolicyUrl">Read the privacy policy</a>.</p>
+            }
+        }
+
+        @if (CategoryContent is not null)
+        {
+            @CategoryContent
+        }
+        else
+        {
+            <div data-privacy-categories hidden>
+                <label><input type="checkbox" data-privacy-category="analytics" /> Analytics</label>
+                <label><input type="checkbox" data-privacy-category="marketing" /> Marketing</label>
+            </div>
+        }
+
+        @if (ActionsContent is not null)
+        {
+            @ActionsContent
+        }
+        else
+        {
+            <p>
+                <button type="button" data-privacy-action="accept-all">Accept optional cookies</button>
+                <button type="button" data-privacy-action="reject-all">Reject optional cookies</button>
+                <button type="button" data-privacy-action="open-settings">Manage choices</button>
+                <button type="button" data-privacy-action="save-settings" hidden>Save choices</button>
+            </p>
+        }
+    </section>
+}
+
+@code {
+    [Parameter] public string CssClass { get; set; } = "syntax-circus-consent-banner";
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+    [Parameter] public RenderFragment? BodyContent { get; set; }
+    [Parameter] public RenderFragment? CategoryContent { get; set; }
+    [Parameter] public RenderFragment? ActionsContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

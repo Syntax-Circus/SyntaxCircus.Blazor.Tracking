@@ -1,0 +1,27 @@
+@using System.Text.Json
+@inject IOptions<TrackingOptions> TrackingOptionsAccessor
+@{
+    var options = TrackingOptionsAccessor.Value;
+    var configuration = new
+    {
+        umami = new
+        {
+            enabled = options.Umami.Enabled,
+            scriptUrl = options.Umami.ScriptUrl,
+            websiteId = options.Umami.WebsiteId
+        },
+        googleAnalytics = new
+        {
+            enabled = options.GoogleAnalytics.Enabled,
+            measurementId = options.GoogleAnalytics.MeasurementId
+        },
+        consent = new
+        {
+            policyVersion = options.Consent.PolicyVersion,
+            cookieName = options.Consent.CookieName,
+            cookieLifetimeDays = options.Consent.CookieLifetimeDays
+        }
+    };
+}
+<script id="syntax-circus-tracking-config" type="application/json">@((MarkupString)JsonSerializer.Serialize(configuration))</script>
+<script src="_content/SyntaxCircus.Blazor.Tracking/tracking.js" defer></script>

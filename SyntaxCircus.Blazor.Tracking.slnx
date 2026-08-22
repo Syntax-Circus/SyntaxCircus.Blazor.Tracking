@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SyntaxCircus.Blazor.Tracking/SyntaxCircus.Blazor.Tracking.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SyntaxCircus.Blazor.Tracking.Tests/SyntaxCircus.Blazor.Tracking.Tests.csproj" />
+  </Folder>
+</Solution>
