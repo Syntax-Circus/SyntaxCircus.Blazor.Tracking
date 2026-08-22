@@ -16,6 +16,8 @@
     <Project Path="src/SyntaxCircus.Blazor.Tracking/SyntaxCircus.Blazor.Tracking.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/SyntaxCircus.Blazor.Tracking.BrowserTests/SyntaxCircus.Blazor.Tracking.BrowserTests.csproj" />
+    <Project Path="tests/SyntaxCircus.Blazor.Tracking.TestHost/SyntaxCircus.Blazor.Tracking.TestHost.csproj" />
     <Project Path="tests/SyntaxCircus.Blazor.Tracking.Tests/SyntaxCircus.Blazor.Tracking.Tests.csproj" />
   </Folder>
 </Solution>

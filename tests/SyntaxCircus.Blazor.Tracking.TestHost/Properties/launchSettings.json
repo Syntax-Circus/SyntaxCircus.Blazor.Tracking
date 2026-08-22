@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "SyntaxCircus.Blazor.Tracking.TestHost": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:63040;http://localhost:63041"
+    }
+  }
+}

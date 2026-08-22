@@ -4,7 +4,7 @@
 [![NuGet](https://img.shields.io/nuget/v/SyntaxCircus.Blazor.Tracking.svg)](https://www.nuget.org/packages/SyntaxCircus.Blazor.Tracking)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
 
-Consent-aware analytics building blocks for Blazor applications. The package bootstraps self-hosted Umami and GA4 from configuration, and supplies an accessible consent UI that a host can completely style or replace.
+Consent-aware analytics building blocks for Blazor applications. The package bootstraps self-hosted Umami, direct GA4, or Google Tag Manager from configuration, and supplies an accessible consent UI that a host can completely style or replace.
 
 > **No support guaranteed.** Published as-is and maintained on a best-effort basis. This package supports privacy engineering; it does not provide legal advice or replace a host application's jurisdiction-specific review.
 
@@ -41,7 +41,7 @@ Render the head bootstrap once, plus the banner and settings control in the body
 
 ## Configuration
 
-All providers are disabled by default. An enabled provider must be complete or startup validation fails.
+All providers are disabled by default. An enabled provider must be complete or startup validation fails. Direct GA4 and GTM are alternative Google-provider modes: enable at most one.
 
 ```json
 {
@@ -60,6 +60,10 @@ All providers are disabled by default. An enabled provider must be complete or s
     "GoogleAnalytics": {
       "Enabled": false,
       "MeasurementId": "G-XXXXXXXXXX"
+    },
+    "GoogleTagManager": {
+      "Enabled": false,
+      "ContainerId": "GTM-XXXXXXX"
     }
   }
 }
@@ -72,10 +76,14 @@ All providers are disabled by default. An enabled provider must be complete or s
 | `Umami:WebsiteId` | The Umami website ID. |
 | `GoogleAnalytics:Enabled` | Enables consent-gated GA4. |
 | `GoogleAnalytics:MeasurementId` | GA4 measurement ID, normally supplied through deployment configuration. |
+| `GoogleTagManager:Enabled` | Enables consent-gated Google Tag Manager. Mutually exclusive with `GoogleAnalytics:Enabled`. |
+| `GoogleTagManager:ContainerId` | GTM web-container ID. |
 | `Consent:PolicyVersion` | Invalidates a previous choice when privacy policy changes. |
 | `Consent:CookieName` | Essential first-party preference cookie name. |
 | `Consent:CookieLifetimeDays` | Preference-cookie lifetime, from 1 to 400 days. |
 | `Consent:PrivacyPolicyUrl` | Optional link shown in the default banner. |
+
+Startup validation requires a direct-GA4 `MeasurementId` in `G-…` format and a GTM `ContainerId` in `GTM-…` format. It rejects a configuration that enables both modes.
 
 ### Umami only
 
@@ -89,9 +97,9 @@ Enable Umami with a tracker you operate. It is loaded on every visit and does no
 }
 ```
 
-### GA4
+### Direct GA4
 
-Enable GA4 only when the host is ready to request consent. The package uses Basic Consent Mode: it does not load `gtag.js`, send a Google request, or set a GA cookie until analytics consent is given. Marketing consent controls `ad_storage`, `ad_user_data`, and `ad_personalization`; analytics consent controls `analytics_storage`.
+Enable GA4 only when the host is ready to request consent. The package uses Basic Consent Mode: it queues denied defaults locally, but does not load `gtag.js`, send a Google request, or set a GA cookie until analytics consent is given. Marketing consent controls `ad_storage`, `ad_user_data`, and `ad_personalization`; analytics consent controls `analytics_storage`.
 
 ```json
 "GoogleAnalytics": {
@@ -103,9 +111,44 @@ Enable GA4 only when the host is ready to request consent. The package uses Basi
 Use deployment secrets/environment variables rather than committing production IDs when that is your team's policy:
 
 ```text
-Privacy__GoogleAnalytics__Enabled=true
-Privacy__GoogleAnalytics__MeasurementId=G-XXXXXXXXXX
+Tracking__GoogleAnalytics__Enabled=true
+Tracking__GoogleAnalytics__MeasurementId=G-XXXXXXXXXX
 ```
+
+### Google Tag Manager
+
+Use GTM when your organization centrally manages Google, third-party, or custom tags. It is a separate mode: do not enable it alongside direct GA4 and do not add the same container manually elsewhere in the host.
+
+```json
+"GoogleTagManager": {
+  "Enabled": true,
+  "ContainerId": "GTM-XXXXXXX"
+}
+```
+
+The package uses Basic Consent Mode for the container: it queues denied Google consent defaults locally, then loads `gtm.js` only after analytics or marketing consent is granted. A reject-all choice makes no Google request. Direct GA4 loads only after analytics consent.
+
+After GTM starts, and on every later preference change, the package pushes this fixed `dataLayer` event:
+
+```javascript
+{
+  event: "syntax_circus_consent_update",
+  syntaxCircusConsent: { analytics: true, marketing: false }
+}
+```
+
+The `syntax_circus_` prefix deliberately identifies the package and avoids collisions with host-defined GTM events. It is an integration hook, not visitor-facing data; a host only encounters it when it enables GTM. Configure every GTM tag and trigger to respect the relevant Google consent state and, where needed, the event above.
+
+## Consent lifecycle and revocation
+
+The package initializes Google Consent Mode with all four supported states denied. On a saved or changed choice it sends a consent update, then starts the configured provider only when that choice permits it. A policy-version change invalidates the stored choice and shows the banner again.
+
+When a user withdraws consent, the package updates the loaded Google tag or container to denied and makes a best-effort removal of known first-party Google cookies on the current host and parent domains:
+
+- Analytics: `_ga`, `_ga_*`, `_gid`, `_gat*`, and `_dc_gtm_*`.
+- Marketing: `_gac_*` and `_gcl_*`.
+
+It cannot unload a script already executing on the page, infer a cookie written on an unknown path/domain, or remove cookies created by third-party or custom GTM tags. GTM container owners must configure those tags and their cleanup policies themselves.
 
 ## Consent UI customization
 
@@ -162,7 +205,9 @@ Replace individual regions when only copy or layout changes:
 - Write the privacy notice and decide where it is linked.
 - Choose the countries in which consent is shown; this package applies the configured policy globally.
 - Keep the dashboard, database, backup policy, and provider credentials secure.
-- Do not add tracking pixels or vendor scripts outside `TrackingHead`, or they can bypass consent.
+- Do not add direct GA4, the configured GTM container, tracking pixels, or vendor scripts outside `TrackingHead`, or they can bypass consent or duplicate page views.
+- Govern GTM publishing carefully: a container can add third-party or custom scripts without a package release, and those tags must carry their own consent requirements and cookie-cleanup policy.
+- Treat `syntax_circus_consent_update` and its `syntaxCircusConsent` payload as a stable, fixed package integration contract when configuring GTM triggers or variables.
 - Test browser cookies and network traffic after every provider/configuration change.
 
 ## Validation
@@ -170,8 +215,9 @@ Replace individual regions when only copy or layout changes:
 ```bash
 dotnet restore SyntaxCircus.Blazor.Tracking.slnx
 dotnet build SyntaxCircus.Blazor.Tracking.slnx --configuration Release
+pwsh tests/SyntaxCircus.Blazor.Tracking.BrowserTests/bin/Release/net10.0/playwright.ps1 install chromium
 dotnet test SyntaxCircus.Blazor.Tracking.slnx --no-build --configuration Release
 dotnet pack SyntaxCircus.Blazor.Tracking.slnx --no-build --configuration Release
 ```
 
-Verify a GA4 deployment in browser developer tools: before an analytics choice there must be no request to `googletagmanager.com` and no `_ga` cookie. After a choice, confirm only the consented provider runs.
+Verify a Google deployment in browser developer tools: before an applicable choice there must be no request to `googletagmanager.com` and no Google cookie. After a choice, confirm only the consented provider runs; after revocation, confirm the provider receives denied consent and known Google cookies are removed.
