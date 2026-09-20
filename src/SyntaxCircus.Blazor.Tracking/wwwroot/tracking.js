@@ -7,10 +7,16 @@
     const config = JSON.parse(configElement.textContent);
     const googleAnalyticsEnabled = Boolean(config.googleAnalytics && config.googleAnalytics.enabled);
     const googleTagManagerEnabled = Boolean(config.googleTagManager && config.googleTagManager.enabled);
-    const consentRequired = googleAnalyticsEnabled || googleTagManagerEnabled;
+    const umamiEnabled = Boolean(config.umami && config.umami.enabled);
+    const umamiRequiresConsent = umamiEnabled && Boolean(config.umami.requireConsent);
+    // Google Consent Mode and cookie cleanup only apply when a Google provider is configured.
+    const googleConsentRequired = googleAnalyticsEnabled || googleTagManagerEnabled;
+    // The banner and settings link appear when any configured provider needs a choice.
+    const consentRequired = googleConsentRequired || umamiRequiresConsent;
     const maxAge = config.consent.cookieLifetimeDays * 86400;
     let googleAnalyticsStarted = false;
     let googleTagManagerStarted = false;
+    let umamiStarted = false;
 
     function readConsent() {
         const prefix = encodeURIComponent(config.consent.cookieName) + "=";
@@ -39,10 +45,13 @@
         return true;
     }
 
-    function startUmami() {
-        if (config.umami && config.umami.enabled) {
-            loadScript(config.umami.scriptUrl, { "data-website-id": config.umami.websiteId });
-        }
+    function startUmami(consent) {
+        if (umamiStarted || !umamiEnabled) return;
+        if (umamiRequiresConsent && !(consent && consent.analytics)) return;
+        const attributes = { "data-website-id": config.umami.websiteId };
+        if (config.umami.respectDoNotTrack !== false) attributes["data-do-not-track"] = "true";
+        loadScript(config.umami.scriptUrl, attributes);
+        umamiStarted = true;
     }
 
     function ensureGoogleDataLayer() {
@@ -60,13 +69,13 @@
     }
 
     function initializeGoogleConsent() {
-        if (!consentRequired) return;
+        if (!googleConsentRequired) return;
         ensureGoogleDataLayer();
         window.gtag("consent", "default", consentState({ analytics: false, marketing: false }));
     }
 
     function updateGoogleConsent(consent) {
-        if (!consentRequired) return;
+        if (!googleConsentRequired) return;
         ensureGoogleDataLayer();
         window.gtag("consent", "update", consentState(consent));
     }
@@ -138,6 +147,7 @@
         startGoogleAnalytics(consent);
         startGoogleTagManager(consent);
         publishGoogleTagManagerConsent(consent);
+        startUmami(consent);
     }
 
     function showBanner() {
@@ -182,7 +192,7 @@
         const consent = readConsent();
         if (consentRequired && !consent) showBanner();
         if (consentRequired) document.querySelectorAll("[data-privacy-settings-link]").forEach(element => { element.hidden = false; });
-        startUmami();
+        if (!umamiRequiresConsent) startUmami();
         if (consent) applyConsentAndStartProviders(consent);
     });
 }());

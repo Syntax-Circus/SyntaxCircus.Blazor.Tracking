@@ -23,6 +23,21 @@ public sealed class UmamiOptions
     public string? ScriptUrl { get; set; }
 
     public string? WebsiteId { get; set; }
+
+    /// <summary>
+    /// When true (the default) the Umami script is held until analytics consent is granted, and
+    /// the consent banner appears even when Umami is the only provider. Set to false to load Umami
+    /// on every visit as consent-exempt audience measurement; read the README section
+    /// "Umami and consent" and complete its checklist before doing so.
+    /// </summary>
+    public bool RequireConsent { get; set; } = true;
+
+    /// <summary>
+    /// When true (the default) the tracker is loaded with <c>data-do-not-track="true"</c> so
+    /// Umami ignores visitors whose browser sends Do Not Track. This is the opt-out that
+    /// consent-exempt audience measurement (RequireConsent = false) is normally expected to offer.
+    /// </summary>
+    public bool RespectDoNotTrack { get; set; } = true;
 }
 
 public sealed class GoogleAnalyticsOptions

@@ -74,6 +74,8 @@ All providers are disabled by default. An enabled provider must be complete or s
 | `Umami:Enabled` | Enables cookie-free Umami tracking. |
 | `Umami:ScriptUrl` | The URL of the self-hosted Umami tracker. |
 | `Umami:WebsiteId` | The Umami website ID. |
+| `Umami:RequireConsent` | Default `true`: Umami is held until analytics consent, and the banner is shown even when Umami is the only provider. Set `false` to load it on every visit as consent-exempt audience measurement, after reading [Umami and consent](#umami-and-consent). |
+| `Umami:RespectDoNotTrack` | Default `true`: adds `data-do-not-track="true"` so Umami ignores browsers that send Do Not Track. |
 | `GoogleAnalytics:Enabled` | Enables consent-gated GA4. |
 | `GoogleAnalytics:MeasurementId` | GA4 measurement ID, normally supplied through deployment configuration. |
 | `GoogleTagManager:Enabled` | Enables consent-gated Google Tag Manager. Mutually exclusive with `GoogleAnalytics:Enabled`. |
@@ -87,7 +89,7 @@ Startup validation requires a direct-GA4 `MeasurementId` in `G-…` format and a
 
 ### Umami only
 
-Enable Umami with a tracker you operate. It is loaded on every visit and does not create the consent banner because it uses no visitor cookie.
+Enable Umami with a tracker you operate. By default it is gated like the Google providers: the script waits for analytics consent and the banner is shown. Because the integration sets no cookie and uses no browser storage, a host may instead opt in to a consent-exempt setup with `Umami:RequireConsent` set to `false`; read [Umami and consent](#umami-and-consent) first to check that fits your deployment.
 
 ```json
 "Umami": {
@@ -96,6 +98,30 @@ Enable Umami with a tracker you operate. It is loaded on every visit and does no
   "WebsiteId": "b2a6af60-8ca1-4c92-a931-5d1d6ec9201d"
 }
 ```
+
+### Umami and consent
+
+> This section describes how the package behaves and the conditions under which consent-exempt measurement is commonly accepted. It is not legal advice; confirm the position for the jurisdictions you serve.
+
+**Default (`RequireConsent: true`).** The script is not requested until the visitor grants **analytics** consent. The banner is shown when Umami is enabled, even without a Google provider. Rejecting, or a policy-version change, keeps Umami off. Withdrawing consent stops Umami from starting on later page loads, but cannot unload a tracker already running in the current page; it takes effect on the next navigation or reload.
+
+**Exempt (`RequireConsent: false`).** The tracker script loads on every page view regardless of any stored choice. If Umami is your only provider, no banner or settings link is rendered, and no consent cookie is written. Google providers, when also enabled, stay fully consent-gated and still show the banner. Only choose this after completing the checklist below.
+
+**Why the exemption is commonly considered reasonable.** The EU ePrivacy rule that drives most consent banners concerns storing or reading information on the visitor's device. This integration sets no cookie, writes no local or session storage, and does no fingerprinting or cross-site identification. Umami does not store IP addresses; it derives a short-lived session hash from IP, user agent and a rotating salt. When you self-host it, no third party receives visitor data. Regulators such as the CNIL accept audience measurement without consent when it meets conditions like the ones in the checklist below.
+
+**Checklist for relying on the exemption.** The package cannot enforce these; they are host responsibilities.
+
+- Self-host Umami (or use a processor bound by a data-processing agreement) and do not combine the data with any other source.
+- Use the data only for aggregate audience measurement, not advertising, profiling or individual tracking.
+- Do not call `umami.identify()`, and do not send custom events or properties that contain personal data. The package never does either.
+- Keep `RespectDoNotTrack` on (or offer another visible opt-out) so measurement is not forced on people who objected.
+- Name Umami, what it collects, why, the legal basis (legitimate interest) and the retention period in your privacy notice, and say how visitors can opt out.
+- Set a sensible retention period in Umami and secure its dashboard and database.
+- Do not enable the Umami cross-domain or session-cookie features if your Umami version offers them.
+
+**Reasons to keep the default `RequireConsent: true` instead.** Your audience is concentrated in a jurisdiction whose regulator does not recognise the exemption or applies it more strictly; your counsel prefers the conservative reading; you cannot meet the checklist; or you later add anything to Umami that identifies individuals.
+
+**Verify:** with the default, confirm no request to the tracker host is made until consent is granted. With `RequireConsent: false`, load a page in a clean profile and confirm the Umami request is sent and no cookie or storage entry is created.
 
 ### Direct GA4
 
@@ -204,6 +230,7 @@ Replace individual regions when only copy or layout changes:
 
 - Write the privacy notice and decide where it is linked.
 - Choose the countries in which consent is shown; this package applies the configured policy globally.
+- Decide whether the default Umami consent exemption is right for your audience and disclose Umami in your privacy notice (see [Umami and consent](#umami-and-consent)).
 - Keep the dashboard, database, backup policy, and provider credentials secure.
 - Do not add direct GA4, the configured GTM container, tracking pixels, or vendor scripts outside `TrackingHead`, or they can bypass consent or duplicate page views.
 - Govern GTM publishing carefully: a container can add third-party or custom scripts without a package release, and those tags must carry their own consent requirements and cookie-cleanup policy.
