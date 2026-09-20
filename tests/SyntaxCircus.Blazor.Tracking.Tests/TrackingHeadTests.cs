@@ -49,4 +49,41 @@ public sealed class TrackingHeadTests
         markup.ShouldContain("googleTagManager");
         markup.ShouldContain("GTM-ABCDE123");
     }
+
+    [Fact]
+    public void UmamiDefaultsToConsentExemptAndRespectingDoNotTrack()
+    {
+        using var context = new BunitContext();
+        context.Services.AddSingleton<IOptions<TrackingOptions>>(Options.Create(new TrackingOptions
+        {
+            Umami = new UmamiOptions { Enabled = true, ScriptUrl = "https://analytics.example/script.js", WebsiteId = "website-id" }
+        }));
+
+        var markup = context.Render<TrackingHead>().Markup;
+
+        markup.ShouldContain("\"requireConsent\":false");
+        markup.ShouldContain("\"respectDoNotTrack\":true");
+    }
+
+    [Fact]
+    public void RendersUmamiConsentAndDoNotTrackSettings()
+    {
+        using var context = new BunitContext();
+        context.Services.AddSingleton<IOptions<TrackingOptions>>(Options.Create(new TrackingOptions
+        {
+            Umami = new UmamiOptions
+            {
+                Enabled = true,
+                ScriptUrl = "https://analytics.example/script.js",
+                WebsiteId = "website-id",
+                RequireConsent = true,
+                RespectDoNotTrack = false
+            }
+        }));
+
+        var markup = context.Render<TrackingHead>().Markup;
+
+        markup.ShouldContain("\"requireConsent\":true");
+        markup.ShouldContain("\"respectDoNotTrack\":false");
+    }
 }

@@ -23,7 +23,7 @@ internal sealed class BrowserTestHost : IAsyncDisposable
 
     private Task<string> StandardError { get; }
 
-    public static async Task<BrowserTestHost> StartAsync(string mode, string policyVersion = "1")
+    public static async Task<BrowserTestHost> StartAsync(string mode, string policyVersion = "1", bool umamiRequireConsent = false, bool umamiRespectDoNotTrack = true)
     {
         var port = GetAvailablePort();
         var address = new Uri($"http://127.0.0.1:{port}");
@@ -42,6 +42,8 @@ internal sealed class BrowserTestHost : IAsyncDisposable
         startInfo.Environment["Tracking__Umami__Enabled"] = mode == "umami" ? "true" : "false";
         startInfo.Environment["Tracking__Umami__ScriptUrl"] = "https://analytics.example.test/tracker.js";
         startInfo.Environment["Tracking__Umami__WebsiteId"] = "website-id";
+        startInfo.Environment["Tracking__Umami__RequireConsent"] = umamiRequireConsent ? "true" : "false";
+        startInfo.Environment["Tracking__Umami__RespectDoNotTrack"] = umamiRespectDoNotTrack ? "true" : "false";
         startInfo.Environment["Tracking__Consent__PolicyVersion"] = policyVersion;
 
         var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Unable to start the browser test host.");
