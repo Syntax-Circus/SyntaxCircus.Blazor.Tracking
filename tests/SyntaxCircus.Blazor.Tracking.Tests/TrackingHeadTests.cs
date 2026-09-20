@@ -51,7 +51,7 @@ public sealed class TrackingHeadTests
     }
 
     [Fact]
-    public void UmamiDefaultsToConsentExemptAndRespectingDoNotTrack()
+    public void UmamiDefaultsToRequiringConsentAndRespectingDoNotTrack()
     {
         using var context = new BunitContext();
         context.Services.AddSingleton<IOptions<TrackingOptions>>(Options.Create(new TrackingOptions
@@ -61,7 +61,7 @@ public sealed class TrackingHeadTests
 
         var markup = context.Render<TrackingHead>().Markup;
 
-        markup.ShouldContain("\"requireConsent\":false");
+        markup.ShouldContain("\"requireConsent\":true");
         markup.ShouldContain("\"respectDoNotTrack\":true");
     }
 
@@ -76,14 +76,14 @@ public sealed class TrackingHeadTests
                 Enabled = true,
                 ScriptUrl = "https://analytics.example/script.js",
                 WebsiteId = "website-id",
-                RequireConsent = true,
+                RequireConsent = false,
                 RespectDoNotTrack = false
             }
         }));
 
         var markup = context.Render<TrackingHead>().Markup;
 
-        markup.ShouldContain("\"requireConsent\":true");
+        markup.ShouldContain("\"requireConsent\":false");
         markup.ShouldContain("\"respectDoNotTrack\":false");
     }
 }

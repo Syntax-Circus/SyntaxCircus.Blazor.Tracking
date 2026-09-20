@@ -9,9 +9,9 @@ public sealed class UmamiTrackingBrowserTests
     private const string TrackerUrl = "https://analytics.example.test/**";
 
     [Fact]
-    public async Task UmamiLoadsWithoutConsentAndShowsNoBannerByDefault()
+    public async Task UmamiLoadsWithoutConsentAndShowsNoBannerWhenConsentIsNotRequired()
     {
-        await using var host = await BrowserTestHost.StartAsync("umami");
+        await using var host = await BrowserTestHost.StartAsync("umami", umamiRequireConsent: false);
         using var playwright = await Playwright.CreateAsync();
         await using var browser = await playwright.Chromium.LaunchAsync();
         var page = await browser.NewPageAsync();
@@ -29,7 +29,7 @@ public sealed class UmamiTrackingBrowserTests
     [Fact]
     public async Task DoNotTrackAttributeIsOmittedWhenDisabled()
     {
-        await using var host = await BrowserTestHost.StartAsync("umami", umamiRespectDoNotTrack: false);
+        await using var host = await BrowserTestHost.StartAsync("umami", umamiRequireConsent: false, umamiRespectDoNotTrack: false);
         using var playwright = await Playwright.CreateAsync();
         await using var browser = await playwright.Chromium.LaunchAsync();
         var page = await browser.NewPageAsync();
@@ -44,7 +44,7 @@ public sealed class UmamiTrackingBrowserTests
     [Fact]
     public async Task UmamiWaitsForAnalyticsConsentWhenConsentIsRequired()
     {
-        await using var host = await BrowserTestHost.StartAsync("umami", umamiRequireConsent: true);
+        await using var host = await BrowserTestHost.StartAsync("umami");
         using var playwright = await Playwright.CreateAsync();
         await using var browser = await playwright.Chromium.LaunchAsync();
         var page = await browser.NewPageAsync();

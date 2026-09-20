@@ -23,7 +23,7 @@ internal sealed class BrowserTestHost : IAsyncDisposable
 
     private Task<string> StandardError { get; }
 
-    public static async Task<BrowserTestHost> StartAsync(string mode, string policyVersion = "1", bool umamiRequireConsent = false, bool umamiRespectDoNotTrack = true)
+    public static async Task<BrowserTestHost> StartAsync(string mode, string policyVersion = "1", bool umamiRequireConsent = true, bool umamiRespectDoNotTrack = true)
     {
         var port = GetAvailablePort();
         var address = new Uri($"http://127.0.0.1:{port}");

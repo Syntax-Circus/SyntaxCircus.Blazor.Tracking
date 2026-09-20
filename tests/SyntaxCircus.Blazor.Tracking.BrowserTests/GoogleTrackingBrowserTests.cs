@@ -139,7 +139,7 @@ public sealed class GoogleTrackingBrowserTests
     [Fact]
     public async Task UmamiLoadsWithoutConsentAndDoesNotShowTheBanner()
     {
-        await using var host = await BrowserTestHost.StartAsync("umami");
+        await using var host = await BrowserTestHost.StartAsync("umami", umamiRequireConsent: false);
         using var playwright = await Playwright.CreateAsync();
         await using var browser = await playwright.Chromium.LaunchAsync();
         var page = await browser.NewPageAsync();
