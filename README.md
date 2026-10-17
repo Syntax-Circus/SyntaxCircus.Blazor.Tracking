@@ -48,7 +48,7 @@ All providers are disabled by default. An enabled provider must be complete or s
   "Tracking": {
     "Consent": {
       "PolicyVersion": "1",
-      "CookieName": "syntax_circus_privacy",
+      "CookieName": "syntax_circus_tracking_consent",
       "CookieLifetimeDays": 180,
       "PrivacyPolicyUrl": "/privacy"
     },
@@ -81,7 +81,7 @@ All providers are disabled by default. An enabled provider must be complete or s
 | `GoogleTagManager:Enabled` | Enables consent-gated Google Tag Manager. Mutually exclusive with `GoogleAnalytics:Enabled`. |
 | `GoogleTagManager:ContainerId` | GTM web-container ID. |
 | `Consent:PolicyVersion` | Invalidates a previous choice when privacy policy changes. |
-| `Consent:CookieName` | Essential first-party preference cookie name. |
+| `Consent:CookieName` | Essential first-party preference cookie name. Default `syntax_circus_tracking_consent`. |
 | `Consent:CookieLifetimeDays` | Preference-cookie lifetime, from 1 to 400 days. |
 | `Consent:PrivacyPolicyUrl` | Optional link shown in the default banner. |
 
